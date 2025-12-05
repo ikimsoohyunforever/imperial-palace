@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宫廷风云 - 主殿</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* 主页面专属样式 */
+        :root {
+            --primary-gold: #d4a017;
+            --primary-brown: #8b4513;
+            --secondary-red: #b22222;
+            --secondary-blue: #1e90ff;
+            --light-bg: #fffaf0;
+            --dark-bg: #2c1810;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #2c1810, #4a235a);
+            color: #333;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        /* 顶部导航栏 */
+        .top-nav {
+            background: linear-gradient(135deg, var(--primary-brown), var(--dark-bg));
+            color: white;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-avatar {
+            font-size: 32px;
+        }
+        
+        .user-details h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+        
+        .user-details p {
+            margin: 2px 0;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .nav-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .nav-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            gap: 10px;
+        }
+        
+        /* 聊天区域 */
+        .chat-section {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary-gold), var(--primary-brown));
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-header h3 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .online-count {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+        
+        .message {
+            margin-bottom: 12px;
+            padding: 10px;
+            border-radius: 10px;
+            background: white;
+            border-left: 4px solid #ddd;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message.system {
+            border-left-color: var(--secondary-blue);
+            background: #e8f4fd;
+        }
+        
+        .message.decree {
+            border-left-color: var(--primary-gold);
+            background: #fff8e1;
+            border: 2px solid gold;
+        }
+        
+        .message.user {
+            border-left-color: var(--primary-brown);
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+        
+        .message-avatar {
+            font-size: 20px;
+        }
+        
+        .message-sender {
+            font-weight: bold;
+            color: var(--primary-brown);
+        }
+        
+        .message-role {
+            font-size: 11px;
+            background: #eee;
+            padding: 1px 6px;
+            border-radius: 8px;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            color: #888;
+            margin-left: auto;
+        }
+        
+        .message-content {
+            margin-top: 5px;
+        }
+        
+        .chat-input-area {
+            padding: 10px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+        }
+        
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--primary-gold);
+        }
+        
+        .send-btn {
+            background: linear-gradient(135deg, var(--primary-gold), var(--primary-brown));
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 0 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .send-btn:hover {
+            opacity: 0.9;
+        }
+        
+        /* 功能按钮区 */
+        .actions-section {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding: 10px 0;
+        }
+        
+        .action-btn {
+            background: white;
+            border: 2px solid var(--primary-gold);
+            border-radius: 15px;
+            padding: 15px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            background: #fff8e1;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(212, 160, 23, 0.2);
+        }
+        
+        .action-btn i {
+            font-size: 24px;
+            color: var(--primary-gold);
+        }
+        
+        .action-btn span {
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: modalIn 0.3s ease;
+        }
+        
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-gold), var(--primary-brown));
+            color: white;
+            padding: 15px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 480px) {
+            .actions-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .chat-header h3 {
+                font-size: 14px;
+            }
+        }
+        
+        /* 加载动画 */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        /* 角色特定样式 */
+        .emperor-badge {
+            background: linear-gradient(135deg, gold, orange);
+            color: #8b4513;
+        }
+        
+        .concubine-badge {
+            background: linear-gradient(135deg, #ffb6c1, #ff69b4);
+            color: #8b0000;
+        }
+        
+        .eunuch-badge {
+            background: linear-gradient(135deg, #d3d3d3, #808080);
+            color: #333;
+        }
+        
+        .maid-badge {
+            background: linear-gradient(135deg, #98fb98, #32cd32);
+            color: #006400;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 顶部导航栏 -->
+        <div class="top-nav" id="topNav">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">👑</div>
+                <div class="user-details">
+                    <h3 id="userName">加载中...</h3>
+                    <p id="userRole">皇帝 • 等级 <span id="userLevel">1</span></p>
+                    <p>💰 <span id="userGold">1000</span> • 🌸 <span id="userFlowers">50</span></p>
+                </div>
+            </div>
+            <div class="nav-controls">
+                <button class="nav-btn" onclick="showProfileModal()">
+                    <i class="fas fa-user"></i>
+                    <span>档案</span>
+                </button>
+                <button class="nav-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>退出</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <!-- 聊天区域 -->
+            <div class="chat-section">
+                <div class="chat-header">
+                    <h3>
+                        <i class="fas fa-comments"></i>
+                        宫廷聊天室
+                        <span class="online-count" id="onlineCount">1人在线</span>
+                    </h3>
+                    <button class="nav-btn" onclick="refreshChat()">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>刷新</span>
+                    </button>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <div class="loading" id="chatLoading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        加载聊天记录...
+                    </div>
+                </div>
+                
+                <div class="chat-input-area">
+                    <input type="text" 
+                           class="chat-input" 
+                           id="chatInput" 
+                           placeholder="输入消息... (回车发送)"
+                           maxlength="200">
+                    <button class="send-btn" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>发送</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 功能按钮区 -->
+            <div class="actions-section">
+                <div class="action-btn" onclick="showInventoryModal()">
+                    <i class="fas fa-archive"></i>
+                    <span>物品库</span>
+                </div>
+                <div class="action-btn" onclick="showFriendsModal()">
+                    <i class="fas fa-users"></i>
+                    <span>朝中同僚</span>
+                </div>
+                <div class="action-btn" onclick="showTasksModal()">
+                    <i class="fas fa-tasks"></i>
+                    <span>宫廷事务</span>
+                </div>
+                <div class="action-btn" onclick="showGiftModal()">
+                    <i class="fas fa-gift"></i>
+                    <span>赠送礼物</span>
+                </div>
+                <div class="action-btn" onclick="showPalaceModal()">
+                    <i class="fas fa-landmark"></i>
+                    <span>宫殿巡视</span>
+                </div>
+                <div class="action-btn" onclick="showRankingModal()">
+                    <i class="fas fa-trophy"></i>
+                    <span>宫廷排行</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 用户档案模态框 -->
+        <div class="modal" id="profileModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-user"></i> 个人档案</h3>
+                    <button class="close-modal" onclick="closeModal('profileModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="profileContent">加载中...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 物品库模态框 -->
+        <div class="modal" id="inventoryModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-archive"></i> 物品库</h3>
+                    <button class="close-modal" onclick="closeModal('inventoryModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="inventoryContent">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="main.js"></script>
+</body>
+</html>
