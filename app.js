@@ -201,9 +201,9 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
             // 跳转到主页面
             setTimeout(() => {
                 // 先创建临时主页面
-                createTempMainPage();
+                //createTempMainPage();
                 // 或者跳转到 main.html（如果已创建）
-                // window.location.href = 'main.html';
+                window.location.href = 'main.html';
             }, 1000);
         } else {
             showMessage(result.message || '登录失败', 'error');
@@ -527,3 +527,4 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 });
+
