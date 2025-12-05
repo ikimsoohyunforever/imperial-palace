@@ -4,14 +4,8 @@ let translations = {};
 let isRegistering = false;
 
 // API配置 - 使用你的函数应用地址
-//const API_BASE = 'https://imperial-palace-func-chan-h6g7e7emdnc0h4hu.japaneast-01.azurewebsites.net/api';
+const API_BASE = 'https://imperial-palace-func-chan-h6g7e7emdnc0h4hu.japaneast-01.azurewebsites.net/api';
 
-const getApiBase = () => {
-    // 直接使用函数应用的URL
-    return 'https://imperial-palace-func-chan-h6g7e7emdnc0h4hu.japaneast-01.azurewebsites.net/api';
-};
-
-const API_BASE = getApiBase();
 
 // 加载语言文件
 async function loadLanguage(lang) {
@@ -338,6 +332,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 });
+
 
 
 
