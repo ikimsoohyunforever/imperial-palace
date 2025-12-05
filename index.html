@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">宫廷风云</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- 语言选择器 -->
+        <div class="language-selector">
+            <select id="languageSelect" onchange="changeLanguage(this.value)">
+                <option value="zh-CN">中文</option>
+                <option value="en-US">English</option>
+                <option value="th-TH">ไทย</option>
+            </select>
+        </div>
+
+        <!-- 登录表单 -->
+        <div class="login-box" id="loginBox">
+            <div class="palace-header">
+                <div class="palace-icon">🏯</div>
+                <h1 id="appTitle">宫廷风云</h1>
+                <p id="welcomeText">欢迎来到宫廷角色扮演</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" placeholder=" " required>
+                    <label id="usernameLabel">用户名</label>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" placeholder=" " required>
+                    <label id="passwordLabel">密码</label>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary" id="loginBtn">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>登录</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="showRegister()" id="registerBtn">
+                        <i class="fas fa-user-plus"></i>
+                        <span>注册</span>
+                    </button>
+                </div>
+            </form>
+            
+            <div class="role-preview">
+                <p id="roleHint">选择初始角色（注册时可选）</p>
+                <div class="role-icons">
+                    <div class="role-icon" data-role="emperor">👑</div>
+                    <div class="role-icon" data-role="concubine">👸</div>
+                    <div class="role-icon" data-role="eunuch">👨‍💼</div>
+                    <div class="role-icon" data-role="maid">💁‍♀️</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 注册表单（默认隐藏） -->
+        <div class="login-box" id="registerBox" style="display: none;">
+            <div class="palace-header">
+                <div class="palace-icon">🏯</div>
+                <h1 id="registerTitle">注册账号</h1>
+                <p id="registerText">创建你的宫廷角色</p>
+            </div>
+            
+            <form id="registerForm">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="regUsername" placeholder=" " required>
+                    <label id="regUsernameLabel">用户名</label>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="regPassword" placeholder=" " required>
+                    <label id="regPasswordLabel">密码</label>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="regConfirmPassword" placeholder=" " required>
+                    <label id="regConfirmPasswordLabel">确认密码</label>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-crown"></i>
+                    <select id="regRole" required>
+                        <option value="">选择初始角色</option>
+                        <option value="emperor">👑 皇帝</option>
+                        <option value="concubine">👸 嫔妃</option>
+                        <option value="eunuch">👨‍💼 太监</option>
+                        <option value="maid">💁‍♀️ 宫女</option>
+                    </select>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary" id="submitRegisterBtn">
+                        <i class="fas fa-check"></i>
+                        <span>确认注册</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="showLogin()">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>返回登录</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 消息提示 -->
+        <div id="messageBox" class="message-box"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

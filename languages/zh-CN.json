@@ -1,0 +1,23 @@
+{
+  "appTitle": "宫廷风云",
+  "login": "登录",
+  "register": "注册",
+  "username": "用户名",
+  "password": "密码",
+  "confirmPassword": "确认密码",
+  "language": "语言",
+  "welcome": "欢迎来到宫廷角色扮演",
+  "loginSuccess": "登录成功",
+  "registerSuccess": "注册成功",
+  "error": {
+    "usernameRequired": "请输入用户名",
+    "passwordRequired": "请输入密码",
+    "passwordMismatch": "密码不一致"
+  },
+  "roles": {
+    "emperor": "皇帝",
+    "concubine": "嫔妃",
+    "eunuch": "太监",
+    "maid": "宫女"
+  }
+}

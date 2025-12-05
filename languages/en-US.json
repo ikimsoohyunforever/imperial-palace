@@ -1,0 +1,23 @@
+{
+  "appTitle": "Imperial Palace RPG",
+  "login": "Login",
+  "register": "Register",
+  "username": "Username",
+  "password": "Password",
+  "confirmPassword": "Confirm Password",
+  "language": "Language",
+  "welcome": "Welcome to Imperial Palace Role Play",
+  "loginSuccess": "Login successful",
+  "registerSuccess": "Registration successful",
+  "error": {
+    "usernameRequired": "Please enter username",
+    "passwordRequired": "Please enter password",
+    "passwordMismatch": "Passwords do not match"
+  },
+  "roles": {
+    "emperor": "Emperor",
+    "concubine": "Concubine",
+    "eunuch": "Eunuch",
+    "maid": "Maid"
+  }
+}

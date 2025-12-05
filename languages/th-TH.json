@@ -1,0 +1,23 @@
+{
+  "appTitle": "บทบาทสมมติวังหลวง",
+  "login": "เข้าสู่ระบบ",
+  "register": "สมัครสมาชิก",
+  "username": "ชื่อผู้ใช้",
+  "password": "รหัสผ่าน",
+  "confirmPassword": "ยืนยันรหัสผ่าน",
+  "language": "ภาษา",
+  "welcome": "ยินดีต้อนรับสู่บทบาทสมมติวังหลวง",
+  "loginSuccess": "เข้าสู่ระบบสำเร็จ",
+  "registerSuccess": "สมัครสมาชิกสำเร็จ",
+  "error": {
+    "usernameRequired": "กรุณากรอกชื่อผู้ใช้",
+    "passwordRequired": "กรุณากรอกรหัสผ่าน",
+    "passwordMismatch": "รหัสผ่านไม่ตรงกัน"
+  },
+  "roles": {
+    "emperor": "ฮ่องเต้",
+    "concubine": "สนม",
+    "eunuch": "ขันที",
+    "maid": "สาวใช้"
+  }
+}
