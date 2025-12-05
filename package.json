@@ -1,8 +1,0 @@
-{
-  "name": "imperial-palace-api",
-  "version": "1.0.0",
-  "description": "宫廷游戏API函数",
-  "dependencies": {
-    "@azure/cosmos": "^3.17.3"
-  }
-}
