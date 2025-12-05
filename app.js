@@ -3,6 +3,9 @@ let currentLanguage = 'zh-CN';
 let translations = {};
 let isRegistering = false;
 
+// API配置 - 使用你的函数应用地址
+const API_BASE = 'https://imperial-palace-func-chan-h6g7e7emdnc0h4hu.japaneast-01.azurewebsites.net/api';
+
 // 加载语言文件
 async function loadLanguage(lang) {
     try {
@@ -162,13 +165,53 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
         return;
     }
     
-    // 这里应该调用后端API
-    showMessage(getTranslation('loginSuccess') || '登录成功', 'success');
-    
-    // 模拟登录成功，跳转到主页面
-    setTimeout(() => {
-        window.location.href = 'main.html';
-    }, 1000);
+    try {
+        showMessage('登录中...', 'info');
+        
+        const response = await fetch(`${API_BASE}/login`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        });
+        
+        // 先获取原始响应文本，方便调试
+        const responseText = await response.text();
+        console.log('登录响应原始文本:', responseText);
+        
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('JSON解析错误:', parseError, '响应文本:', responseText);
+            showMessage('服务器响应格式错误', 'error');
+            return;
+        }
+        
+        if (result.success) {
+            showMessage(getTranslation('loginSuccess') || '登录成功', 'success');
+            
+            // 保存用户信息和token
+            localStorage.setItem('palace_user', JSON.stringify(result.user));
+            localStorage.setItem('palace_token', result.token);
+            localStorage.setItem('user_language', result.user.language || currentLanguage);
+            
+            // 跳转到主页面
+            setTimeout(() => {
+                // 先创建临时主页面
+                createTempMainPage();
+                // 或者跳转到 main.html（如果已创建）
+                // window.location.href = 'main.html';
+            }, 1000);
+        } else {
+            showMessage(result.message || '登录失败', 'error');
+        }
+    } catch (error) {
+        console.error('登录请求错误:', error);
+        showMessage('网络错误，请检查API地址', 'error');
+    }
 });
 
 // 处理注册
@@ -200,16 +243,49 @@ document.getElementById('registerForm')?.addEventListener('submit', async functi
         return;
     }
     
-    // 这里应该调用后端API
-    showMessage(getTranslation('registerSuccess') || '注册成功', 'success');
-    
-    // 模拟注册成功，自动登录并跳转
-    setTimeout(() => {
-        showLogin();
-        document.getElementById('username').value = username;
-        document.getElementById('password').value = password;
-        document.getElementById('loginForm').dispatchEvent(new Event('submit'));
-    }, 1500);
+    try {
+        showMessage('注册中...', 'info');
+        
+        const response = await fetch(`${API_BASE}/register`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ username, password, role })
+        });
+        
+        // 先获取原始响应文本，方便调试
+        const responseText = await response.text();
+        console.log('注册响应原始文本:', responseText);
+        
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('JSON解析错误:', parseError, '响应文本:', responseText);
+            showMessage('服务器响应格式错误', 'error');
+            return;
+        }
+        
+        if (result.success) {
+            showMessage(result.message || (getTranslation('registerSuccess') || '注册成功'), 'success');
+            
+            // 自动登录
+            document.getElementById('username').value = username;
+            document.getElementById('password').value = password;
+            
+            // 触发登录表单提交
+            setTimeout(() => {
+                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+            }, 1500);
+        } else {
+            showMessage(result.message || '注册失败', 'error');
+        }
+    } catch (error) {
+        console.error('注册请求错误:', error);
+        showMessage('网络错误，请检查API地址', 'error');
+    }
 });
 
 // 角色图标点击事件
@@ -229,6 +305,204 @@ document.querySelectorAll('.role-icon').forEach(icon => {
     });
 });
 
+// 创建临时主页面（如果没有main.html）
+function createTempMainPage() {
+    const user = JSON.parse(localStorage.getItem('palace_user') || '{}');
+    
+    const tempMainHTML = `
+    <!DOCTYPE html>
+    <html lang="${currentLanguage}">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>宫廷风云 - 主页面</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
+            .main-container {
+                padding: 20px;
+                max-width: 800px;
+                margin: 0 auto;
+            }
+            .user-header {
+                background: linear-gradient(135deg, #d4a017, #8b4513);
+                color: white;
+                padding: 20px;
+                border-radius: 15px;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            }
+            .user-avatar {
+                font-size: 48px;
+            }
+            .user-info h2 {
+                margin: 0;
+                font-size: 24px;
+            }
+            .user-info p {
+                margin: 5px 0;
+                opacity: 0.9;
+            }
+            .action-buttons {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+                margin: 20px 0;
+            }
+            .action-btn {
+                background: white;
+                border: 2px solid #d4a017;
+                padding: 15px;
+                border-radius: 10px;
+                font-size: 16px;
+                cursor: pointer;
+                transition: all 0.3s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+            .action-btn:hover {
+                background: #f8f8f8;
+                transform: translateY(-2px);
+            }
+            .chat-box {
+                background: white;
+                border-radius: 10px;
+                padding: 20px;
+                margin: 20px 0;
+                height: 300px;
+                overflow-y: auto;
+                border: 2px solid #ddd;
+            }
+            .message {
+                margin: 10px 0;
+                padding: 10px;
+                border-radius: 8px;
+                background: #f8f8f8;
+            }
+            .system-message {
+                background: #e8f4fd;
+                color: #0066cc;
+            }
+            .logout-btn {
+                background: #dc3545;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 8px;
+                cursor: pointer;
+                margin-top: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="main-container">
+            <div class="user-header">
+                <div class="user-avatar">${user.avatar || '👤'}</div>
+                <div class="user-info">
+                    <h2>${user.username || '未命名用户'}</h2>
+                    <p>${user.title || user.role || '平民'} • 等级 ${user.level || 1}</p>
+                    <p>💰 黄金: ${user.items?.gold || 0} • 🌸 鲜花: ${user.items?.flowers || 0}</p>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="action-btn" onclick="showChat()">
+                    <i class="fas fa-comments"></i> 宫廷聊天
+                </button>
+                <button class="action-btn" onclick="showInventory()">
+                    <i class="fas fa-archive"></i> 物品库
+                </button>
+                <button class="action-btn" onclick="showFriends()">
+                    <i class="fas fa-users"></i> 朝中同僚
+                </button>
+                <button class="action-btn" onclick="showProfile()">
+                    <i class="fas fa-user-edit"></i> 个人信息
+                </button>
+                ${user.role === 'emperor' ? `
+                <button class="action-btn" style="background: gold; border-color: goldenrod;">
+                    <i class="fas fa-crown"></i> 发布圣旨
+                </button>
+                ` : ''}
+            </div>
+            
+            <div id="chatSection" style="display: block;">
+                <h3><i class="fas fa-comments"></i> 宫廷聊天室</h3>
+                <div class="chat-box" id="chatBox">
+                    <div class="message system-message">
+                        📢 系统：欢迎 ${user.username} 进入宫廷！
+                    </div>
+                    <div class="message system-message">
+                        📢 系统：这里是所有宫廷成员交流的地方
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <input type="text" id="chatInput" placeholder="输入消息..." style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    <button onclick="sendMessage()" style="padding: 10px 20px; background: #d4a017; color: white; border: none; border-radius: 8px;">
+                        发送
+                    </button>
+                </div>
+            </div>
+            
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> 退出登录
+            </button>
+        </div>
+        
+        <script>
+            function showChat() {
+                document.getElementById('chatSection').style.display = 'block';
+            }
+            
+            function sendMessage() {
+                const input = document.getElementById('chatInput');
+                const message = input.value.trim();
+                if (message) {
+                    const chatBox = document.getElementById('chatBox');
+                    const user = JSON.parse(localStorage.getItem('palace_user') || '{}');
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = 'message';
+                    msgDiv.innerHTML = \`<strong>\${user.username}</strong>: \${message}\`;
+                    chatBox.appendChild(msgDiv);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                    input.value = '';
+                }
+            }
+            
+            function logout() {
+                localStorage.removeItem('palace_user');
+                localStorage.removeItem('palace_token');
+                window.location.href = 'index.html';
+            }
+            
+            // 回车发送消息
+            document.getElementById('chatInput')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // 自动滚动到聊天底部
+            setTimeout(() => {
+                const chatBox = document.getElementById('chatBox');
+                if (chatBox) {
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            }, 100);
+        </script>
+    </body>
+    </html>
+    `;
+    
+    // 创建新窗口或跳转
+    const newWindow = window.open();
+    newWindow.document.write(tempMainHTML);
+    newWindow.document.close();
+}
+
 // 页面加载时初始化
 window.addEventListener('DOMContentLoaded', () => {
     // 设置首选语言
@@ -243,4 +517,13 @@ window.addEventListener('DOMContentLoaded', () => {
         const role = icon.getAttribute('data-role');
         icon.setAttribute('data-i18n', `roles.${role}`);
     });
+    
+    // 检查是否已登录
+    const user = localStorage.getItem('palace_user');
+    if (user) {
+        // 如果已登录，直接跳转到主页面
+        setTimeout(() => {
+            createTempMainPage();
+        }, 1000);
+    }
 });
