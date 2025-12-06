@@ -191,7 +191,12 @@ async function initializeSignalR() {
         console.log('正在连接SignalR...');
         
         // 1. 获取协商信息
-        const negotiateResponse = await fetch(`${API_BASE}/negotiate`);
+        const negotiateResponse = await fetch(`${API_BASE}/negotiate`, {
+    method: 'POST',  // 🎯 添加这行
+    headers: {
+        'Content-Type': 'application/json'
+    }
+});
         if (!negotiateResponse.ok) {
             throw new Error(`协商失败: ${negotiateResponse.status}`);
         }
@@ -603,3 +608,4 @@ window.addEventListener('beforeunload', () => {
 });
 
 console.log('=== main.js加载完成 ===');
+
