@@ -150,12 +150,6 @@
             animation: fadeIn 0.3s ease;
         }
         
-        /* 🆕 新增：自己发送的消息样式 */
-        .message.mine {
-            border-left-color: var(--secondary-blue);
-            background-color: #f0f8ff;
-        }
-        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
@@ -164,18 +158,6 @@
         .message.system {
             border-left-color: var(--secondary-blue);
             background: #e8f4fd;
-            text-align: center;
-            font-style: italic;
-        }
-        
-        .message.error {
-            border-left-color: #ff4d4f;
-            background: #fff2f0;
-        }
-        
-        .message.success {
-            border-left-color: #52c41a;
-            background: #f6ffed;
         }
         
         .message.decree {
@@ -204,24 +186,6 @@
             color: var(--primary-brown);
         }
         
-        /* 🆕 角色徽章样式增强 */
-        .message-sender.emperor-badge {
-            color: #d48806 !important;
-            font-weight: bold;
-        }
-        
-        .message-sender.concubine-badge {
-            color: #c41d7f !important;
-        }
-        
-        .message-sender.eunuch-badge {
-            color: #595959 !important;
-        }
-        
-        .message-sender.maid-badge {
-            color: #389e0d !important;
-        }
-        
         .message-role {
             font-size: 11px;
             background: #eee;
@@ -237,26 +201,6 @@
         
         .message-content {
             margin-top: 5px;
-            word-break: break-word;
-        }
-        
-        /* 🆕 滚动条美化 */
-        .chat-messages::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .chat-messages::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-        
-        .chat-messages::-webkit-scrollbar-thumb {
-            background: #d4a017;
-            border-radius: 3px;
-        }
-        
-        .chat-messages::-webkit-scrollbar-thumb:hover {
-            background: #b8860b;
         }
         
         .chat-input-area {
@@ -280,11 +224,6 @@
             border-color: var(--primary-gold);
         }
         
-        .chat-input:disabled {
-            background-color: #f5f5f5;
-            cursor: not-allowed;
-        }
-        
         .send-btn {
             background: linear-gradient(135deg, var(--primary-gold), var(--primary-brown));
             color: white;
@@ -295,16 +234,10 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            font-size: 14px;
         }
         
         .send-btn:hover {
             opacity: 0.9;
-        }
-        
-        .send-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
         }
         
         /* 功能按钮区 */
@@ -404,14 +337,6 @@
             .chat-header h3 {
                 font-size: 14px;
             }
-            
-            .nav-btn span {
-                display: none; /* 在小屏幕上只显示图标 */
-            }
-            
-            .nav-btn {
-                padding: 8px;
-            }
         }
         
         /* 加载动画 */
@@ -456,7 +381,7 @@
                 </div>
             </div>
             <div class="nav-controls">
-                <button class="nav-btn" onclick="showProfile()">
+                <button class="nav-btn" onclick="showProfileModal()">
                     <i class="fas fa-user"></i>
                     <span>档案</span>
                 </button>
@@ -496,7 +421,7 @@
                            id="chatInput" 
                            placeholder="输入消息... (回车发送)"
                            maxlength="200">
-                    <button class="send-btn" onclick="sendChatMessage()">
+                    <button class="send-btn" onclick="sendMessage()">
                         <i class="fas fa-paper-plane"></i>
                         <span>发送</span>
                     </button>
@@ -505,11 +430,11 @@
             
             <!-- 功能按钮区 -->
             <div class="actions-section">
-                <div class="action-btn" onclick="showInventory()">
+                <div class="action-btn" onclick="showInventoryModal()">
                     <i class="fas fa-archive"></i>
                     <span>物品库</span>
                 </div>
-                <div class="action-btn" onclick="showFriends()">
+                <div class="action-btn" onclick="showFriendsModal()">
                     <i class="fas fa-users"></i>
                     <span>朝中同僚</span>
                 </div>
@@ -560,147 +485,5 @@
     </div>
     
     <script src="main.js"></script>
-    
-    <script>
-        // 🆕 HTML内联脚本 - 补充缺失的函数
-        
-        // 刷新聊天
-        function refreshChat() {
-            console.log('手动刷新聊天');
-            loadChatMessages();
-            showChatNotice('聊天已刷新', 'success');
-        }
-        
-        // 关闭模态框
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.style.display = 'none';
-            }
-        }
-        
-        // 显示个人档案模态框
-        function showProfileModal() {
-            const modal = document.getElementById('profileModal');
-            if (modal) {
-                const content = document.getElementById('profileContent');
-                if (content && currentUser) {
-                    content.innerHTML = `
-                        <div style="text-align: center; margin-bottom: 20px;">
-                            <div style="font-size: 48px; margin-bottom: 10px;">${currentUser.avatar || '👤'}</div>
-                            <h3 style="color: var(--primary-brown);">${currentUser.username}</h3>
-                            <p>${getRoleTitle(currentUser.role)} • 等级 ${currentUser.level || 1}</p>
-                        </div>
-                        
-                        <div style="background: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                            <h4 style="margin-top: 0;">宫廷资产</h4>
-                            <p>💰 黄金: ${currentUser.items?.gold || 0}</p>
-                            <p>🌸 鲜花: ${currentUser.items?.flowers || 0}</p>
-                            <p>💎 珠宝: ${currentUser.items?.jewels || 0}</p>
-                        </div>
-                        
-                        <div style="background: #f9f9f9; padding: 15px; border-radius: 10px;">
-                            <h4 style="margin-top: 0;">宫廷信息</h4>
-                            <p>🆔 ID: ${currentUser.id || '未知'}</p>
-                            <p>📅 注册: ${currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString() : '未知'}</p>
-                            <p>⏰ 最后登录: ${currentUser.lastLogin ? new Date(currentUser.lastLogin).toLocaleString() : '未知'}</p>
-                        </div>
-                    `;
-                }
-                modal.style.display = 'flex';
-            }
-        }
-        
-        // 显示物品库模态框
-        function showInventoryModal() {
-            const modal = document.getElementById('inventoryModal');
-            if (modal) {
-                const content = document.getElementById('inventoryContent');
-                if (content && currentUser) {
-                    content.innerHTML = `
-                        <div style="text-align: center;">
-                            <h3 style="color: var(--primary-brown);">你的物品库</h3>
-                            <p style="color: #666; margin-bottom: 20px;">共 ${Object.keys(currentUser.items || {}).length} 种物品</p>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
-                            <div style="background: linear-gradient(135deg, #fff9db, #ffec3d); padding: 15px; border-radius: 10px; text-align: center;">
-                                <div style="font-size: 24px;">💰</div>
-                                <h4 style="margin: 10px 0 5px 0;">黄金</h4>
-                                <p style="font-size: 20px; font-weight: bold; color: #d48806;">${currentUser.items?.gold || 0}</p>
-                            </div>
-                            
-                            <div style="background: linear-gradient(135deg, #f6ffed, #b7eb8f); padding: 15px; border-radius: 10px; text-align: center;">
-                                <div style="font-size: 24px;">🌸</div>
-                                <h4 style="margin: 10px 0 5px 0;">鲜花</h4>
-                                <p style="font-size: 20px; font-weight: bold; color: #389e0d;">${currentUser.items?.flowers || 0}</p>
-                            </div>
-                            
-                            <div style="background: linear-gradient(135deg, #e6fffb, #87e8de); padding: 15px; border-radius: 10px; text-align: center;">
-                                <div style="font-size: 24px;">💎</div>
-                                <h4 style="margin: 10px 0 5px 0;">珠宝</h4>
-                                <p style="font-size: 20px; font-weight: bold; color: #08979c;">${currentUser.items?.jewels || 0}</p>
-                            </div>
-                            
-                            <div style="background: linear-gradient(135deg, #f0f5ff, #adc6ff); padding: 15px; border-radius: 10px; text-align: center;">
-                                <div style="font-size: 24px;">📜</div>
-                                <h4 style="margin: 10px 0 5px 0;">御旨</h4>
-                                <p style="font-size: 20px; font-weight: bold; color: #1d39c4;">${currentUser.items?.decrees || 0}</p>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 10px;">
-                            <h4 style="margin-top: 0;">物品说明</h4>
-                            <p style="font-size: 12px; color: #666;">黄金：宫廷通用货币，可用于购买物品</p>
-                            <p style="font-size: 12px; color: #666;">鲜花：表达心意，可赠予他人</p>
-                            <p style="font-size: 12px; color: #666;">珠宝：珍贵物品，可提升身份</p>
-                            <p style="font-size: 12px; color: #666;">御旨：皇帝专用，可发布命令</p>
-                        </div>
-                    `;
-                }
-                modal.style.display = 'flex';
-            }
-        }
-        
-        // 其他模态框函数（占位）
-        function showFriendsModal() {
-            showChatNotice('朝中同僚功能开发中...', 'system');
-        }
-        
-        function showTasksModal() {
-            showChatNotice('宫廷事务功能开发中...', 'system');
-        }
-        
-        function showGiftModal() {
-            showChatNotice('赠送礼物功能开发中...', 'system');
-        }
-        
-        function showPalaceModal() {
-            showChatNotice('宫殿巡视功能开发中...', 'system');
-        }
-        
-        function showRankingModal() {
-            showChatNotice('宫廷排行功能开发中...', 'system');
-        }
-        
-        // 兼容性函数
-        function showChatNotice(text, type) {
-            // 如果main.js中定义了showChatNotice，使用它
-            if (typeof window.showChatNotice === 'function') {
-                window.showChatNotice(text, type);
-            } else {
-                console.log(`[${type}] ${text}`);
-                const container = document.getElementById('chatMessages');
-                if (container) {
-                    container.innerHTML += `
-                        <div class="message ${type}">
-                            <div class="message-content">📢 ${text}</div>
-                        </div>
-                    `;
-                    container.scrollTop = container.scrollHeight;
-                }
-            }
-        }
-    </script>
 </body>
 </html>
