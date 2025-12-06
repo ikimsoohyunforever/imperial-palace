@@ -182,68 +182,76 @@ async function startChatSystem() {
 
 // 🆕 初始化SignalR连接
 async function initializeSignalR() {
-    if (!currentUser || !currentUser.id) {
-        console.log('用户未登录，跳过SignalR初始化');
-        return false;
-    }
-    
     try {
         console.log('正在连接SignalR...');
         
-        // 1. 获取协商信息
         const negotiateResponse = await fetch(`${API_BASE}/negotiate`, {
-    method: 'POST',  // 🎯 添加这行
-    headers: {
-        'Content-Type': 'application/json'
-    }
-});
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
         if (!negotiateResponse.ok) {
             throw new Error(`协商失败: ${negotiateResponse.status}`);
         }
         
         const connectionInfo = await negotiateResponse.json();
-        console.log('SignalR连接信息获取成功');
         
-        // 2. 建立SignalR连接
+        // 🎯 修改1：使用更稳定的连接配置
         signalRConnection = new signalR.HubConnectionBuilder()
             .withUrl(connectionInfo.url, {
-                accessTokenFactory: () => connectionInfo.accessToken
+                accessTokenFactory: () => connectionInfo.accessToken,
+                skipNegotiation: true,  // 🆕 跳过协商，直接使用WebSocket
+                transport: signalR.HttpTransportType.WebSockets  // 🆕 强制WebSocket
             })
             .withAutomaticReconnect({
                 nextRetryDelayInMilliseconds: retryContext => {
-                    if (retryContext.previousRetryCount < 3) return 2000;
-                    if (retryContext.previousRetryCount < 10) return 5000;
-                    return 10000;
+                    // 🆕 更激进的重连策略
+                    if (retryContext.previousRetryCount === 0) return 0; // 立即重连
+                    if (retryContext.previousRetryCount < 5) return 2000; // 2秒
+                    return 5000; // 5秒
                 }
             })
-            .configureLogging(signalR.LogLevel.Warning)
+            .configureLogging(signalR.LogLevel.Error) // 🆕 减少日志
             .build();
         
-        // 3. 监听新消息
+        // 🎯 修改2：确保监听器正确设置
         signalRConnection.on("ReceiveMessage", (message) => {
-            console.log('📨 收到实时消息:', message.username, ':', message.content);
-            addSingleMessage(message);
+            console.log('📨 收到实时消息:', message);
+            if (message && message.content) {
+                addSingleMessage(message);
+            }
         });
         
-        // 4. 监听连接状态
-        signalRConnection.onclose(() => {
-            console.log('SignalR连接关闭');
+        // 🎯 修改3：添加心跳保持连接
+        signalRConnection.keepAliveIntervalInMilliseconds = 15000; // 15秒心跳
+        signalRConnection.serverTimeoutInMilliseconds = 30000; // 30秒超时
+        
+        // 🎯 修改4：更详细的连接状态监听
+        signalRConnection.onclose((error) => {
+            console.log('SignalR连接关闭，错误:', error);
             isSignalRConnected = false;
+            // 自动重连
+            setTimeout(() => {
+                if (!isSignalRConnected) {
+                    console.log('尝试重新连接...');
+                    initializeSignalR();
+                }
+            }, 2000);
         });
         
-        signalRConnection.onreconnecting(() => {
-            console.log('SignalR重连中...');
+        signalRConnection.onreconnecting((error) => {
+            console.log('SignalR重连中，错误:', error);
         });
         
-        signalRConnection.onreconnected(() => {
-            console.log('✅ SignalR重新连接成功');
+        signalRConnection.onreconnected((connectionId) => {
+            console.log('✅ SignalR重新连接成功，ID:', connectionId);
             isSignalRConnected = true;
         });
         
-        // 5. 启动连接
+        // 启动连接
         await signalRConnection.start();
         isSignalRConnected = true;
-        console.log('✅ SignalR连接成功！');
+        console.log('✅ SignalR连接成功！连接ID:', signalRConnection.connectionId);
         
         // 显示连接成功提示
         showChatNotice('已连接到实时聊天服务器', 'success');
@@ -254,12 +262,20 @@ async function initializeSignalR() {
         console.error('❌ SignalR连接失败:', error);
         isSignalRConnected = false;
         
-        // 显示连接失败提示
-        showChatNotice('实时连接失败，使用普通模式', 'error');
+        // 5秒后重试
+        setTimeout(() => {
+            if (!isSignalRConnected) {
+                console.log('尝试重新连接SignalR...');
+                initializeSignalR();
+            }
+        }, 5000);
         
         return false;
     }
 }
+
+
+
 
 // 🆕 发送消息函数（优化版）
 async function sendChatMessage() {
@@ -608,4 +624,5 @@ window.addEventListener('beforeunload', () => {
 });
 
 console.log('=== main.js加载完成 ===');
+
 
