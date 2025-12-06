@@ -1,13 +1,10 @@
-// 主页面JavaScript - 调试版本
+// 主页面JavaScript - 带完整聊天系统
 const API_BASE = 'https://imperial-palace-func-chan-h6g7e7emdnc0h4hu.japaneast-01.azurewebsites.net/api';
 let currentUser = null;
-let chatMessages = [];
+let chatPollInterval = null;
+const CHAT_POLL_INTERVAL = 3000; // 3秒轮询一次
 
-// 🎯 修改1：添加调试日志
 console.log('=== main.js开始执行 ===');
-console.log('URL:', window.location.href);
-console.log('localStorage用户:', localStorage.getItem('palace_user'));
-console.log('localStorage token:', localStorage.getItem('palace_token'));
 
 // 🎯 修改2：防止自动跳转的初始化
 window.addEventListener('DOMContentLoaded', () => {
@@ -20,8 +17,7 @@ window.addEventListener('DOMContentLoaded', () => {
         
         console.log('读取localStorage:', { 
             hasUser: !!userStr, 
-            hasToken: !!token,
-            userLength: userStr ? userStr.length : 0
+            hasToken: !!token
         });
         
         if (userStr) {
@@ -31,14 +27,15 @@ window.addEventListener('DOMContentLoaded', () => {
             // 立即更新UI
             updateUIWithUser(currentUser);
             console.log('UI已更新');
+            
+            // 🆕 启动聊天系统！
+            startChatSystem();
         } else {
             console.log('没有用户数据，但暂时不跳转');
-            // 暂时不跳转，等待手动检查
             document.getElementById('userName').textContent = '未登录（调试模式）';
         }
         
-        // 2. 加载非关键功能
-        loadChatMessages();
+        // 2. 设置事件监听器
         setupEventListeners();
         
         // 3. 异步验证（如果失败也不跳转）
@@ -49,7 +46,6 @@ window.addEventListener('DOMContentLoaded', () => {
         
     } catch (error) {
         console.error('初始化错误（不跳转）:', error);
-        // 即使出错也不跳转
     }
 });
 
@@ -84,44 +80,13 @@ async function safeValidateUser() {
                 updateUIWithUser(currentUser);
             } else {
                 console.log('API验证失败，但继续使用本地数据:', data.message);
-                // 不跳转！
             }
         } else {
             console.log('API请求失败，状态码:', response.status);
-            // 不跳转！
         }
         
     } catch (error) {
-        console.log('验证过程出错（网络或其他），继续使用本地数据:', error.message);
-        // 不跳转！
-    }
-}
-
-// 🎯 修改4：移除所有可能跳转的代码
-// 查找并注释掉所有 window.location.href = 'index.html'
-
-// 修改 checkLoginStatus 函数（如果有）
-async function checkLoginStatus() {
-    console.log('checkLoginStatus被调用');
-    
-    const user = localStorage.getItem('palace_user');
-    const token = localStorage.getItem('palace_token');
-    
-    console.log('检查结果:', { hasUser: !!user, hasToken: !!token });
-    
-    if (!user || !token) {
-        console.log('缺少用户数据，但暂时不跳转（调试模式）');
-        // window.location.href = 'index.html'; // 🚫 注释掉这行！
-        return;
-    }
-    
-    try {
-        currentUser = JSON.parse(user);
-        console.log('用户解析成功:', currentUser.username);
-        updateUIWithUser(currentUser);
-    } catch (error) {
-        console.error('解析失败:', error);
-        // 即使失败也不跳转
+        console.log('验证过程出错，继续使用本地数据:', error.message);
     }
 }
 
@@ -134,15 +99,8 @@ async function loadUserInfo() {
         return;
     }
     
-    // 只使用本地数据，不调用API
     console.log('使用本地用户数据:', currentUser.username);
     updateUIWithUser(currentUser);
-    
-    // 异步尝试更新（可选）
-    setTimeout(async () => {
-        console.log('异步更新用户信息尝试');
-        // 这里可以调用API，但失败时不跳转
-    }, 2000);
 }
 
 // 🎯 修改6：修改logout函数（添加确认）
@@ -150,6 +108,7 @@ function logout() {
     console.log('logout函数被调用');
     
     if (confirm('确定要退出登录吗？')) {
+        stopChatPolling(); // 🆕 停止聊天轮询
         localStorage.removeItem('palace_user');
         localStorage.removeItem('palace_token');
         console.log('已清除登录数据');
@@ -159,27 +118,21 @@ function logout() {
     }
 }
 
-
-// 🎯 添加这个函数！
+// 🎯 更新UI函数
 function updateUIWithUser(user) {
     console.log('updateUIWithUser被调用，用户:', user.username);
     
     try {
-        // 更新头像
         const avatarElement = document.getElementById('userAvatar');
         if (avatarElement) {
             avatarElement.textContent = user.avatar || '👤';
-            console.log('头像已更新:', user.avatar);
         }
         
-        // 更新用户名
         const nameElement = document.getElementById('userName');
         if (nameElement) {
             nameElement.textContent = user.username || '未知用户';
-            console.log('用户名已更新:', user.username);
         }
         
-        // 更新角色
         const roleElement = document.getElementById('userRole');
         if (roleElement) {
             const roleTitles = {
@@ -190,20 +143,16 @@ function updateUIWithUser(user) {
             };
             const roleTitle = roleTitles[user.role] || user.role;
             roleElement.textContent = `${roleTitle} • 等级 ${user.level || 1}`;
-            console.log('角色已更新:', roleTitle);
         }
         
-        // 更新物品
         const goldElement = document.getElementById('userGold');
         if (goldElement) {
             goldElement.textContent = user.items?.gold || 0;
-            console.log('黄金已更新:', user.items?.gold);
         }
         
         const flowersElement = document.getElementById('userFlowers');
         if (flowersElement) {
             flowersElement.textContent = user.items?.flowers || 0;
-            console.log('鲜花已更新:', user.items?.flowers);
         }
         
         console.log('✅ UI更新完成');
@@ -213,15 +162,215 @@ function updateUIWithUser(user) {
     }
 }
 
-// 🎯 添加其他可能缺失的简单函数
-function loadChatMessages() {
-    console.log('loadChatMessages被调用');
-    // 简单实现
-    const chatBox = document.querySelector('.chat-section div');
-    if (chatBox) {
-        chatBox.innerHTML = '📢 系统：欢迎 ' + (currentUser?.username || '用户') + ' 进入宫廷！';
+// ==================== 聊天系统核心逻辑 ====================
+
+// 🆕 启动聊天系统
+function startChatSystem() {
+    console.log('启动聊天系统...');
+    
+    // 先加载一次消息
+    loadChatMessages();
+    
+    // 启动定时轮询
+    startChatPolling();
+}
+
+// 🆕 发送消息函数（替换原来的简单sendMessage）
+async function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    if (!input) {
+        console.error('找不到聊天输入框');
+        return;
+    }
+    
+    const content = input.value.trim();
+    
+    if (!content) {
+        showChatNotice('消息不能为空', 'system');
+        return;
+    }
+    
+    if (!currentUser || !currentUser.id) {
+        showChatNotice('请先登录', 'error');
+        return;
+    }
+    
+    // 禁用输入框防止重复发送
+    input.disabled = true;
+    const sendBtn = document.querySelector('.send-btn');
+    if (sendBtn) sendBtn.disabled = true;
+    
+    try {
+        console.log('正在发送消息:', content);
+        
+        const response = await fetch(`${API_BASE}/sendMessage`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                userId: currentUser.id,
+                username: currentUser.username,
+                userRole: currentUser.role,
+                content: content
+            })
+        });
+        
+        const responseText = await response.text();
+        console.log('发送响应:', responseText);
+        
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('JSON解析失败:', parseError);
+            showChatNotice('服务器响应异常', 'error');
+            return;
+        }
+        
+        if (result.success) {
+            input.value = ''; // 清空输入框
+            showChatNotice('消息发送成功', 'success');
+            await loadChatMessages(); // 立即刷新消息
+        } else {
+            showChatNotice(`发送失败: ${result.message || '未知错误'}`, 'error');
+        }
+        
+    } catch (error) {
+        console.error('网络请求失败:', error);
+        showChatNotice('网络错误，请检查连接', 'error');
+    } finally {
+        input.disabled = false;
+        input.focus();
+        const sendBtn = document.querySelector('.send-btn');
+        if (sendBtn) sendBtn.disabled = false;
     }
 }
+
+// 🆕 加载聊天消息（替换原来的简单版本）
+async function loadChatMessages() {
+    try {
+        const timestamp = new Date().getTime(); // 防止缓存
+        const response = await fetch(`${API_BASE}/getMessages?_=${timestamp}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // 更新在线人数
+            const onlineCountEl = document.getElementById('onlineCount');
+            if (onlineCountEl && result.onlineCount) {
+                onlineCountEl.textContent = `${result.onlineCount}人在线`;
+            }
+            
+            // 显示消息
+            displayMessages(result.messages || []);
+        } else {
+            console.error('获取消息失败:', result.message);
+        }
+    } catch (error) {
+        console.error('获取消息失败:', error);
+    }
+}
+
+// 🆕 显示消息到聊天框
+function displayMessages(messages) {
+    const container = document.getElementById('chatMessages');
+    if (!container) {
+        console.error('找不到聊天消息容器');
+        return;
+    }
+    
+    // 移除加载动画
+    const loadingEl = container.querySelector('.loading');
+    if (loadingEl) loadingEl.remove();
+    
+    if (!messages || messages.length === 0) {
+        // 只在第一次加载时显示欢迎消息
+        if (!container.innerHTML.includes('欢迎')) {
+            container.innerHTML = `
+                <div class="message system">
+                    <div class="message-content">
+                        📢 宫廷聊天室已开启，你是今天的第一位访客！
+                    </div>
+                </div>
+            `;
+        }
+        return;
+    }
+    
+    // 生成消息HTML
+    let messagesHTML = '';
+    
+    messages.forEach(msg => {
+        const isMine = currentUser && msg.userId === currentUser.id;
+        const badgeClass = getBadgeClass(msg.userRole);
+        const timeStr = formatMessageTime(msg.timestamp);
+        const roleTitle = getRoleTitle(msg.userRole);
+        
+        messagesHTML += `
+            <div class="message ${isMine ? 'mine' : ''}">
+                <div class="message-header">
+                    <span class="message-avatar">${getAvatarByRole(msg.userRole)}</span>
+                    <span class="message-sender ${badgeClass}">${msg.username}</span>
+                    <span class="message-role">${roleTitle}</span>
+                    <span class="message-time">${timeStr}</span>
+                </div>
+                <div class="message-content">${escapeHtml(msg.content)}</div>
+            </div>
+        `;
+    });
+    
+    // 是否应该滚动到底部
+    const shouldScrollToBottom = isChatAtBottom(container);
+    container.innerHTML = messagesHTML;
+    
+    if (shouldScrollToBottom) {
+        container.scrollTop = container.scrollHeight;
+    }
+}
+
+// 🆕 启动轮询
+function startChatPolling() {
+    if (chatPollInterval) {
+        clearInterval(chatPollInterval);
+    }
+    
+    chatPollInterval = setInterval(loadChatMessages, CHAT_POLL_INTERVAL);
+    console.log('聊天轮询已启动，间隔:', CHAT_POLL_INTERVAL, 'ms');
+}
+
+// 🆕 停止轮询
+function stopChatPolling() {
+    if (chatPollInterval) {
+        clearInterval(chatPollInterval);
+        chatPollInterval = null;
+        console.log('聊天轮询已停止');
+    }
+}
+
+// 🆕 显示聊天提示
+function showChatNotice(text, type = 'system') {
+    console.log(`[${type}] ${text}`);
+    
+    // 这里可以添加一个小的Toast提示，先简单用console
+    const container = document.getElementById('chatMessages');
+    if (container) {
+        const noticeHTML = `
+            <div class="message ${type}">
+                <div class="message-content">📢 ${text}</div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', noticeHTML);
+        container.scrollTop = container.scrollHeight;
+    }
+}
+
+// ==================== 工具函数 ====================
 
 function setupEventListeners() {
     console.log('setupEventListeners被调用');
@@ -230,51 +379,110 @@ function setupEventListeners() {
     const chatInput = document.getElementById('chatInput');
     if (chatInput) {
         chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChatMessage();
             }
         });
     }
+    
+    // 其他功能按钮的事件监听
+    const actionButtons = document.querySelectorAll('.action-btn');
+    actionButtons.forEach(btn => {
+        const icon = btn.querySelector('i');
+        if (icon) {
+            const action = icon.className.split(' ')[1];
+            btn.addEventListener('click', () => {
+                showFeatureNotice(action);
+            });
+        }
+    });
 }
 
-function showChat() {
-    alert('聊天功能开发中...');
+function showFeatureNotice(feature) {
+    const featureNames = {
+        'fa-archive': '物品库',
+        'fa-users': '朝中同僚',
+        'fa-tasks': '宫廷事务',
+        'fa-gift': '赠送礼物',
+        'fa-landmark': '宫殿巡视',
+        'fa-trophy': '宫廷排行'
+    };
+    
+    const name = featureNames[feature] || '该功能';
+    showChatNotice(`${name}功能开发中...`, 'system');
 }
 
-function showInventory() {
-    alert('物品库功能开发中...');
+function showInventory() { showFeatureNotice('fa-archive'); }
+function showFriends() { showFeatureNotice('fa-users'); }
+function showProfile() { showFeatureNotice('fa-user'); }
+function sendMessage() { sendChatMessage(); } // 兼容原有调用
+
+function isChatAtBottom(container) {
+    const threshold = 50;
+    return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
 }
 
-function showFriends() {
-    alert('好友功能开发中...');
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
-function showProfile() {
-    alert('个人档案功能开发中...');
-}
-
-function sendMessage() {
-    const input = document.getElementById('chatInput');
-    if (input && input.value.trim()) {
-        alert('消息发送：' + input.value);
-        input.value = '';
+function formatMessageTime(timestamp) {
+    try {
+        const date = new Date(timestamp);
+        return date.getHours().toString().padStart(2, '0') + ':' + 
+               date.getMinutes().toString().padStart(2, '0');
+    } catch (e) {
+        return '--:--';
     }
 }
 
+function getBadgeClass(role) {
+    const badgeMap = {
+        'emperor': 'emperor-badge',
+        'concubine': 'concubine-badge', 
+        'eunuch': 'eunuch-badge',
+        'maid': 'maid-badge'
+    };
+    return badgeMap[role] || '';
+}
+
+function getAvatarByRole(role) {
+    const avatarMap = {
+        'emperor': '👑',
+        'concubine': '👸',
+        'eunuch': '👨‍💼', 
+        'maid': '💁‍♀️'
+    };
+    return avatarMap[role] || '👤';
+}
+
+function getRoleTitle(role) {
+    const titleMap = {
+        'emperor': '皇帝',
+        'concubine': '嫔妃',
+        'eunuch': '太监',
+        'maid': '宫女'
+    };
+    return titleMap[role] || '平民';
+}
 
 // 🎯 修改7：防止其他地方的跳转
-// 在文件末尾添加全局错误捕获
 window.addEventListener('error', (event) => {
     console.log('全局错误捕获:', event.message);
-    // 防止错误导致跳转
     return false;
 });
 
-// 防止未处理的Promise rejection导致跳转
 window.addEventListener('unhandledrejection', (event) => {
     console.log('未处理的Promise rejection:', event.reason);
-    event.preventDefault(); // 阻止默认行为
+    event.preventDefault();
+});
+
+// 页面卸载时清理
+window.addEventListener('beforeunload', () => {
+    stopChatPolling();
 });
 
 console.log('=== main.js加载完成 ===');
-
