@@ -159,6 +159,109 @@ function logout() {
     }
 }
 
+
+// 🎯 添加这个函数！
+function updateUIWithUser(user) {
+    console.log('updateUIWithUser被调用，用户:', user.username);
+    
+    try {
+        // 更新头像
+        const avatarElement = document.getElementById('userAvatar');
+        if (avatarElement) {
+            avatarElement.textContent = user.avatar || '👤';
+            console.log('头像已更新:', user.avatar);
+        }
+        
+        // 更新用户名
+        const nameElement = document.getElementById('userName');
+        if (nameElement) {
+            nameElement.textContent = user.username || '未知用户';
+            console.log('用户名已更新:', user.username);
+        }
+        
+        // 更新角色
+        const roleElement = document.getElementById('userRole');
+        if (roleElement) {
+            const roleTitles = {
+                emperor: '皇帝',
+                concubine: '嫔妃',
+                eunuch: '太监',
+                maid: '宫女'
+            };
+            const roleTitle = roleTitles[user.role] || user.role;
+            roleElement.textContent = `${roleTitle} • 等级 ${user.level || 1}`;
+            console.log('角色已更新:', roleTitle);
+        }
+        
+        // 更新物品
+        const goldElement = document.getElementById('userGold');
+        if (goldElement) {
+            goldElement.textContent = user.items?.gold || 0;
+            console.log('黄金已更新:', user.items?.gold);
+        }
+        
+        const flowersElement = document.getElementById('userFlowers');
+        if (flowersElement) {
+            flowersElement.textContent = user.items?.flowers || 0;
+            console.log('鲜花已更新:', user.items?.flowers);
+        }
+        
+        console.log('✅ UI更新完成');
+        
+    } catch (error) {
+        console.error('更新UI时出错:', error);
+    }
+}
+
+// 🎯 添加其他可能缺失的简单函数
+function loadChatMessages() {
+    console.log('loadChatMessages被调用');
+    // 简单实现
+    const chatBox = document.querySelector('.chat-section div');
+    if (chatBox) {
+        chatBox.innerHTML = '📢 系统：欢迎 ' + (currentUser?.username || '用户') + ' 进入宫廷！';
+    }
+}
+
+function setupEventListeners() {
+    console.log('setupEventListeners被调用');
+    
+    // 聊天输入框回车发送
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) {
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    }
+}
+
+function showChat() {
+    alert('聊天功能开发中...');
+}
+
+function showInventory() {
+    alert('物品库功能开发中...');
+}
+
+function showFriends() {
+    alert('好友功能开发中...');
+}
+
+function showProfile() {
+    alert('个人档案功能开发中...');
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    if (input && input.value.trim()) {
+        alert('消息发送：' + input.value);
+        input.value = '';
+    }
+}
+
+
 // 🎯 修改7：防止其他地方的跳转
 // 在文件末尾添加全局错误捕获
 window.addEventListener('error', (event) => {
@@ -174,3 +277,4 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 console.log('=== main.js加载完成 ===');
+
