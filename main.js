@@ -1,10 +1,10 @@
-// 主页面JavaScript - 带完整聊天系统
+// 主页面JavaScript - SignalR实时聊天系统
 const API_BASE = 'https://imperial-palace-func-chan-h6g7e7emdnc0h4hu.japaneast-01.azurewebsites.net/api';
 let currentUser = null;
-let chatPollInterval = null;
-const CHAT_POLL_INTERVAL = 60000; // 3秒轮询一次  3000
+let signalRConnection = null;
+let isSignalRConnected = false;
 
-console.log('=== main.js开始执行 ===');
+console.log('=== main.js开始执行（SignalR版） ===');
 
 // 🎯 修改2：防止自动跳转的初始化
 window.addEventListener('DOMContentLoaded', () => {
@@ -28,7 +28,7 @@ window.addEventListener('DOMContentLoaded', () => {
             updateUIWithUser(currentUser);
             console.log('UI已更新');
             
-            // 🆕 启动聊天系统！
+            // 🆕 启动SignalR聊天系统！
             startChatSystem();
         } else {
             console.log('没有用户数据，但暂时不跳转');
@@ -108,7 +108,12 @@ function logout() {
     console.log('logout函数被调用');
     
     if (confirm('确定要退出登录吗？')) {
-        stopChatPolling(); // 🆕 停止聊天轮询
+        // 🆕 停止SignalR连接
+        if (signalRConnection) {
+            signalRConnection.stop();
+            signalRConnection = null;
+        }
+        
         localStorage.removeItem('palace_user');
         localStorage.removeItem('palace_token');
         console.log('已清除登录数据');
@@ -162,20 +167,96 @@ function updateUIWithUser(user) {
     }
 }
 
-// ==================== 聊天系统核心逻辑 ====================
+// ==================== SignalR实时聊天系统 ====================
 
-// 🆕 启动聊天系统
-function startChatSystem() {
-    console.log('启动聊天系统...');
+// 🆕 启动聊天系统（SignalR版）
+async function startChatSystem() {
+    console.log('启动SignalR聊天系统...');
     
-    // 先加载一次消息
-    loadChatMessages();
+    // 1. 先加载历史消息（只加载一次）
+    await loadChatMessages();
     
-    // 启动定时轮询
-    startChatPolling();
+    // 2. 启动SignalR实时连接
+    await initializeSignalR();
 }
 
-// 🆕 发送消息函数（替换原来的简单sendMessage）
+// 🆕 初始化SignalR连接
+async function initializeSignalR() {
+    if (!currentUser || !currentUser.id) {
+        console.log('用户未登录，跳过SignalR初始化');
+        return false;
+    }
+    
+    try {
+        console.log('正在连接SignalR...');
+        
+        // 1. 获取协商信息
+        const negotiateResponse = await fetch(`${API_BASE}/negotiate`);
+        if (!negotiateResponse.ok) {
+            throw new Error(`协商失败: ${negotiateResponse.status}`);
+        }
+        
+        const connectionInfo = await negotiateResponse.json();
+        console.log('SignalR连接信息获取成功');
+        
+        // 2. 建立SignalR连接
+        signalRConnection = new signalR.HubConnectionBuilder()
+            .withUrl(connectionInfo.url, {
+                accessTokenFactory: () => connectionInfo.accessToken
+            })
+            .withAutomaticReconnect({
+                nextRetryDelayInMilliseconds: retryContext => {
+                    if (retryContext.previousRetryCount < 3) return 2000;
+                    if (retryContext.previousRetryCount < 10) return 5000;
+                    return 10000;
+                }
+            })
+            .configureLogging(signalR.LogLevel.Warning)
+            .build();
+        
+        // 3. 监听新消息
+        signalRConnection.on("ReceiveMessage", (message) => {
+            console.log('📨 收到实时消息:', message.username, ':', message.content);
+            addSingleMessage(message);
+        });
+        
+        // 4. 监听连接状态
+        signalRConnection.onclose(() => {
+            console.log('SignalR连接关闭');
+            isSignalRConnected = false;
+        });
+        
+        signalRConnection.onreconnecting(() => {
+            console.log('SignalR重连中...');
+        });
+        
+        signalRConnection.onreconnected(() => {
+            console.log('✅ SignalR重新连接成功');
+            isSignalRConnected = true;
+        });
+        
+        // 5. 启动连接
+        await signalRConnection.start();
+        isSignalRConnected = true;
+        console.log('✅ SignalR连接成功！');
+        
+        // 显示连接成功提示
+        showChatNotice('已连接到实时聊天服务器', 'success');
+        
+        return true;
+        
+    } catch (error) {
+        console.error('❌ SignalR连接失败:', error);
+        isSignalRConnected = false;
+        
+        // 显示连接失败提示
+        showChatNotice('实时连接失败，使用普通模式', 'error');
+        
+        return false;
+    }
+}
+
+// 🆕 发送消息函数（优化版）
 async function sendChatMessage() {
     const input = document.getElementById('chatInput');
     if (!input) {
@@ -203,6 +284,18 @@ async function sendChatMessage() {
     try {
         console.log('正在发送消息:', content);
         
+        // 🆕 本地立即显示（优化体验）
+        const tempMessage = {
+            id: `temp_${Date.now()}`,
+            userId: currentUser.id,
+            username: currentUser.username,
+            userRole: currentUser.role,
+            content: content,
+            timestamp: new Date().toISOString()
+        };
+        addSingleMessage(tempMessage);
+        
+        // 发送到服务器
         const response = await fetch(`${API_BASE}/sendMessage`, {
             method: 'POST',
             headers: { 
@@ -231,15 +324,18 @@ async function sendChatMessage() {
         
         if (result.success) {
             input.value = ''; // 清空输入框
-            showChatNotice('消息发送成功', 'success');
-            await loadChatMessages(); // 立即刷新消息
+            // 🆕 注意：不需要调用 loadChatMessages() 
+            // 因为消息会通过SignalR推送回来
         } else {
             showChatNotice(`发送失败: ${result.message || '未知错误'}`, 'error');
+            // 🆕 如果发送失败，移除临时消息
+            removeTempMessage(tempMessage.id);
         }
         
     } catch (error) {
         console.error('网络请求失败:', error);
         showChatNotice('网络错误，请检查连接', 'error');
+        removeTempMessage(`temp_${Date.now()}`);
     } finally {
         input.disabled = false;
         input.focus();
@@ -248,7 +344,52 @@ async function sendChatMessage() {
     }
 }
 
-// 🆕 加载聊天消息（替换原来的简单版本）
+// 🆕 移除临时消息（如果发送失败）
+function removeTempMessage(messageId) {
+    const container = document.getElementById('chatMessages');
+    if (!container) return;
+    
+    const tempMsg = container.querySelector(`[data-temp-id="${messageId}"]`);
+    if (tempMsg) {
+        tempMsg.remove();
+    }
+}
+
+// 🆕 添加单条消息到聊天框（用于SignalR推送）
+function addSingleMessage(message) {
+    const container = document.getElementById('chatMessages');
+    if (!container) return;
+    
+    // 移除加载动画
+    const loadingEl = container.querySelector('.loading');
+    if (loadingEl) loadingEl.remove();
+    
+    // 判断是否是自己发的消息
+    const isMine = currentUser && message.userId === currentUser.id;
+    const badgeClass = getBadgeClass(message.userRole);
+    const timeStr = formatMessageTime(message.timestamp);
+    const roleTitle = getRoleTitle(message.userRole);
+    
+    const messageHTML = `
+        <div class="message ${isMine ? 'mine' : ''}" ${message.id.startsWith('temp_') ? `data-temp-id="${message.id}"` : ''}>
+            <div class="message-header">
+                <span class="message-avatar">${getAvatarByRole(message.userRole)}</span>
+                <span class="message-sender ${badgeClass}">${message.username}</span>
+                <span class="message-role">${roleTitle}</span>
+                <span class="message-time">${timeStr}</span>
+            </div>
+            <div class="message-content">${escapeHtml(message.content)}</div>
+        </div>
+    `;
+    
+    // 添加到聊天框底部
+    container.insertAdjacentHTML('beforeend', messageHTML);
+    
+    // 自动滚动到底部
+    container.scrollTop = container.scrollHeight;
+}
+
+// 🆕 加载历史消息（只加载一次）
 async function loadChatMessages() {
     try {
         const timestamp = new Date().getTime(); // 防止缓存
@@ -273,11 +414,11 @@ async function loadChatMessages() {
             console.error('获取消息失败:', result.message);
         }
     } catch (error) {
-        console.error('获取消息失败:', error);
+        console.error('获取历史消息失败:', error);
     }
 }
 
-// 🆕 显示消息到聊天框
+// 🆕 显示消息到聊天框（用于初始加载）
 function displayMessages(messages) {
     const container = document.getElementById('chatMessages');
     if (!container) {
@@ -290,12 +431,11 @@ function displayMessages(messages) {
     if (loadingEl) loadingEl.remove();
     
     if (!messages || messages.length === 0) {
-        // 只在第一次加载时显示欢迎消息
         if (!container.innerHTML.includes('欢迎')) {
             container.innerHTML = `
                 <div class="message system">
                     <div class="message-content">
-                        📢 宫廷聊天室已开启，你是今天的第一位访客！
+                        📢 宫廷实时聊天室已开启！
                     </div>
                 </div>
             `;
@@ -325,39 +465,14 @@ function displayMessages(messages) {
         `;
     });
     
-    // 是否应该滚动到底部
-    const shouldScrollToBottom = isChatAtBottom(container);
     container.innerHTML = messagesHTML;
-    
-    if (shouldScrollToBottom) {
-        container.scrollTop = container.scrollHeight;
-    }
-}
-
-// 🆕 启动轮询
-function startChatPolling() {
-    if (chatPollInterval) {
-        clearInterval(chatPollInterval);
-    }
-    
-    chatPollInterval = setInterval(loadChatMessages, CHAT_POLL_INTERVAL);
-    console.log('聊天轮询已启动，间隔:', CHAT_POLL_INTERVAL, 'ms');
-}
-
-// 🆕 停止轮询
-function stopChatPolling() {
-    if (chatPollInterval) {
-        clearInterval(chatPollInterval);
-        chatPollInterval = null;
-        console.log('聊天轮询已停止');
-    }
+    container.scrollTop = container.scrollHeight;
 }
 
 // 🆕 显示聊天提示
 function showChatNotice(text, type = 'system') {
     console.log(`[${type}] ${text}`);
     
-    // 这里可以添加一个小的Toast提示，先简单用console
     const container = document.getElementById('chatMessages');
     if (container) {
         const noticeHTML = `
@@ -469,7 +584,7 @@ function getRoleTitle(role) {
     return titleMap[role] || '平民';
 }
 
-// 🎯 修改7：防止其他地方的跳转
+// 🎯 防止其他地方的跳转
 window.addEventListener('error', (event) => {
     console.log('全局错误捕获:', event.message);
     return false;
@@ -480,10 +595,11 @@ window.addEventListener('unhandledrejection', (event) => {
     event.preventDefault();
 });
 
-// 页面卸载时清理
+// 页面卸载时清理SignalR连接
 window.addEventListener('beforeunload', () => {
-    stopChatPolling();
+    if (signalRConnection) {
+        signalRConnection.stop();
+    }
 });
 
 console.log('=== main.js加载完成 ===');
-
