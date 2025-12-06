@@ -5,20 +5,32 @@ let chatMessages = [];
 
 // 页面加载初始化
 window.addEventListener('DOMContentLoaded', async () => {
+
+
+    console.log('checkLoginStatus');
+    
     // 检查登录状态
     await checkLoginStatus();
+
+
+    console.log('loadUserInfo');
     
     // 加载用户信息
-    await loadUserInfo();
+    // await loadUserInfo();
     
     // 加载聊天记录
     await loadChatMessages();
+
+ console.log('loadChatMessages');
     
     // 设置事件监听
     setupEventListeners();
     
     // 开始心跳（保持在线状态）
     startHeartbeat();
+
+console.log('startHeartbeat');
+    
 });
 
 
@@ -481,3 +493,4 @@ window.sendMessage = sendMessage;
 window.logout = logout;
 
 window.closeModal = closeModal;
+
