@@ -2,7 +2,7 @@
 const API_BASE = 'https://imperial-palace-func-chan-h6g7e7emdnc0h4hu.japaneast-01.azurewebsites.net/api';
 let currentUser = null;
 let chatPollInterval = null;
-const CHAT_POLL_INTERVAL = 3000; // 3秒轮询一次
+const CHAT_POLL_INTERVAL = 60000; // 3秒轮询一次  3000
 
 console.log('=== main.js开始执行 ===');
 
@@ -486,3 +486,4 @@ window.addEventListener('beforeunload', () => {
 });
 
 console.log('=== main.js加载完成 ===');
+
