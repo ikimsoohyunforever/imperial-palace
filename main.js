@@ -21,24 +21,65 @@ window.addEventListener('DOMContentLoaded', async () => {
     startHeartbeat();
 });
 
-// 检查登录状态
+
+// 修改检查登录状态函数
 async function checkLoginStatus() {
     const user = localStorage.getItem('palace_user');
     const token = localStorage.getItem('palace_token');
     
     if (!user || !token) {
+        console.log('未找到用户信息，跳转到登录页');
         window.location.href = 'index.html';
         return;
     }
     
     try {
         currentUser = JSON.parse(user);
+        console.log('从localStorage加载用户:', currentUser.username);
         updateUIWithUser(currentUser);
+        
+        // 尝试验证token（可选）
+        // await validateToken(token);
+        
     } catch (error) {
         console.error('解析用户信息失败:', error);
         logout();
     }
 }
+
+// 可选：添加token验证函数
+async function validateToken(token) {
+    try {
+        // 简单的token验证（可以根据需要实现）
+        if (!token || !token.startsWith('palace-token-')) {
+            throw new Error('无效的token格式');
+        }
+        return true;
+    } catch (error) {
+        console.log('token验证失败:', error.message);
+        logout();
+    }
+}
+
+
+// // 检查登录状态
+// async function checkLoginStatus() {
+//     const user = localStorage.getItem('palace_user');
+//     const token = localStorage.getItem('palace_token');
+    
+//     if (!user || !token) {
+//         window.location.href = 'index.html';
+//         return;
+//     }
+    
+//     try {
+//         currentUser = JSON.parse(user);
+//         updateUIWithUser(currentUser);
+//     } catch (error) {
+//         console.error('解析用户信息失败:', error);
+//         logout();
+//     }
+// }
 
 // 加载用户信息
 async function loadUserInfo() {
@@ -438,4 +479,5 @@ window.showRankingModal = showRankingModal;
 window.refreshChat = refreshChat;
 window.sendMessage = sendMessage;
 window.logout = logout;
+
 window.closeModal = closeModal;
